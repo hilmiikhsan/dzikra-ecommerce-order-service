@@ -7,9 +7,11 @@ import (
 	"runtime"
 	"syscall"
 
+	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/cmd/proto/order"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/adapter"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/infrastructure"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/infrastructure/config"
+	orderService "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/handler/grpc"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
@@ -22,7 +24,6 @@ func RunServeGRPC() {
 	if err != nil {
 		logLevel = zerolog.InfoLevel
 	}
-
 	infrastructure.InitializeLogger(
 		envs.App.Environtment,
 		envs.App.LogFile,
@@ -36,16 +37,20 @@ func RunServeGRPC() {
 
 	grpcServer := grpc.NewServer()
 
-	// Sync adapters
-	err = adapter.Adapters.Sync(
+	opts := []adapter.Option{
 		adapter.WithGRPCServer(grpcServer),
 		adapter.WithDzikraPostgres(),
-	)
-	if err != nil {
+		adapter.WithDzikraRedis(),
+		adapter.WithDzikraMidtrans(),
+	}
+
+	// Sync adapters
+	if err := adapter.Adapters.Sync(opts...); err != nil {
 		log.Fatal().Err(err).Msg("Failed to sync adapters")
 	}
 
-	// Run gRPC server in a goroutine
+	order.RegisterOrderServiceServer(grpcServer, orderService.NewOrderAPI())
+
 	go func() {
 		log.Info().Msgf("gRPC server is running on port %s", envs.App.GrpcPort)
 		if err := grpcServer.Serve(lis); err != nil {
@@ -53,20 +58,18 @@ func RunServeGRPC() {
 		}
 	}()
 
-	// Handle graceful shutdown
 	quit := make(chan os.Signal, 1)
-	shutdownSignals := []os.Signal{os.Interrupt, syscall.SIGTERM, syscall.SIGINT}
+	signals := []os.Signal{os.Interrupt, syscall.SIGTERM, syscall.SIGINT}
 	if runtime.GOOS == "windows" {
-		shutdownSignals = []os.Signal{os.Interrupt}
+		signals = []os.Signal{os.Interrupt}
 	}
-	signal.Notify(quit, shutdownSignals...)
+	signal.Notify(quit, signals...)
 	<-quit
 
 	log.Info().Msg("gRPC server is shutting down ...")
 	grpcServer.GracefulStop()
 
-	err = adapter.Adapters.Unsync()
-	if err != nil {
+	if err := adapter.Adapters.Unsync(); err != nil {
 		log.Error().Err(err).Msg("Error while closing adapters")
 	}
 

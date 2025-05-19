@@ -59,16 +59,11 @@ func RunServerHTTP(cmd *flag.FlagSet, args []string) {
 	}))
 	// End Application Middlewares
 
-	minioOpt, err := adapter.WithDzikraMinio()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to initialize Dzikra Minio")
-	}
-
 	adapter.Adapters.Sync(
 		adapter.WithRestServer(app),
 		adapter.WithDzikraPostgres(),
 		adapter.WithDzikraRedis(),
-		minioOpt,
+		adapter.WithDzikraMidtrans(),
 		adapter.WithValidator(validator.NewValidator()),
 	)
 
@@ -109,7 +104,7 @@ func RunServerHTTP(cmd *flag.FlagSet, args []string) {
 	<-quit
 	log.Info().Msg("Server is shutting down ...")
 
-	err = adapter.Adapters.Unsync()
+	err := adapter.Adapters.Unsync()
 	if err != nil {
 		log.Error().Msgf("Error while closing adapters: %v", err)
 	}

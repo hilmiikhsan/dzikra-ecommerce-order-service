@@ -67,6 +67,11 @@ type Config struct {
 		OriginCityID        string `env:"ORIGIN_CITY_ID" env-default:""`
 		OriginSubDistrictID string `env:"ORIGIN_SUBDISTRICT_ID" env-default:""`
 	}
+	Midtrans struct {
+		ServerKey string `env:"MIDTRANS_SERVER_KEY" env-default:""`
+		ClientKey string `env:"MIDTRANS_CLIENT_KEY" env-default:""`
+		IsProd    bool   `env:"MIDTRANS_IS_PRODUCTION" env-default:"false"`
+	}
 	Auth struct {
 		AuthGrpcHost string `env:"AUTH_GRPC_HOST" env-default:"localhost:7000"`
 	}
@@ -147,6 +152,9 @@ func (c *Configure) Initialize() {
 		Envs.RajaOngkir.BaseURL = utils.GetEnv("RAJAONGKIR_BASE_URL", Envs.RajaOngkir.BaseURL)
 		Envs.RajaOngkir.OriginCityID = utils.GetEnv("ORIGIN_CITY_ID", Envs.RajaOngkir.OriginCityID)
 		Envs.RajaOngkir.OriginSubDistrictID = utils.GetEnv("ORIGIN_SUBDISTRICT_ID", Envs.RajaOngkir.OriginSubDistrictID)
+		Envs.Midtrans.ServerKey = utils.GetEnv("MIDTRANS_SERVER_KEY", Envs.Midtrans.ServerKey)
+		Envs.Midtrans.ClientKey = utils.GetEnv("MIDTRANS_CLIENT_KEY", Envs.Midtrans.ClientKey)
+		Envs.Midtrans.IsProd = utils.GetBoolEnv("MIDTRANS_IS_PRODUCTION", Envs.Midtrans.IsProd)
 		Envs.Auth.AuthGrpcHost = utils.GetEnv("AUTH_GRPC_HOST", Envs.Auth.AuthGrpcHost)
 		Envs.Notification.NotificationGrpcHost = utils.GetEnv("NOTIFICATION_GRPC_HOST", Envs.Notification.NotificationGrpcHost)
 	})

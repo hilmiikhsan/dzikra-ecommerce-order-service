@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package address;
+
+option go_package = "./address";
+
+
+service AddressService {
+  rpc GetAddressesByIds (GetAddressesByIdsRequest) 
+    returns (GetAddressesResponse);
+}
+
+message GetAddressesByIdsRequest { 
+  repeated int64 ids = 1; 
+}
+
+message Address {
+  int32 id = 1;
+  string province = 2;
+  string province_vendor_id = 3;
+  string city = 4;
+  string city_vendor_id = 5;
+  string subdistrict = 6;
+  string subdistrict_vendor_id = 7;
+  string postal_code = 8;
+  string address = 9;
+  string received_name = 10;
+  string user_id = 11;
+}
+
+message GetAddressesResponse { 
+  repeated Address addresses = 1; 
+  string message = 2;  
+}

@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package product_image;
+
+option go_package = "./product_image";
+
+
+service ProductImageService {
+  rpc GetImagesByProductIds (GetImagesRequest) returns (GetImagesResponse);
+}
+
+message GetImagesRequest { 
+  repeated int64 product_ids = 1; 
+}
+
+message GetImagesResponse { 
+  repeated ProductImage images = 1; 
+  string message = 2;  
+}
+
+message ProductImage {
+  int64 id = 1;
+  string image_url = 2;
+  int32 position = 3;
+  int64 product_id = 4;
+}

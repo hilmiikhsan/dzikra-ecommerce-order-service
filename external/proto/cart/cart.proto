@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package cart;
+
+option go_package = "./cart";
+
+
+service CartService {
+  rpc DeleteCartByUserID (DeleteCartByUserIdRequest) 
+    returns (DeleteCartByUserIdResponse);
+}
+
+message DeleteCartByUserIdRequest {
+  string user_id = 1;
+}
+
+message DeleteCartByUserIdResponse {
+  string message = 1;  
+}

@@ -7,7 +7,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
-	"github.com/minio/minio-go/v7"
+	"github.com/midtrans/midtrans-go/snap"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 )
@@ -30,7 +30,7 @@ type Adapter struct {
 	//Driven Adapters
 	DzikraPostgres *sqlx.DB
 	DzikraRedis    *redis.Client
-	DzikraMinio    *minio.Client
+	DzikraMidtrans *snap.Client
 	Validator      Validator // *validator.Validator
 }
 
@@ -49,8 +49,8 @@ func (a *Adapter) Sync(opts ...Option) error {
 		errs = append(errs, "Dzikra Redis not initialized")
 	}
 
-	if a.DzikraMinio == nil {
-		errs = append(errs, "Dzikra Minio not initialized")
+	if a.DzikraMidtrans == nil {
+		errs = append(errs, "Dzikra Midtrans not initialized")
 	}
 
 	if a.GRPCServer == nil && a.RestServer == nil {
@@ -93,10 +93,6 @@ func (a *Adapter) Unsync() error {
 			errs = append(errs, err.Error())
 		}
 		log.Info().Msg("Dzikra Redis disconnected")
-	}
-
-	if a.DzikraMinio != nil {
-		log.Info().Msg("Dzikra Minio disconnected")
 	}
 
 	if len(errs) > 0 {

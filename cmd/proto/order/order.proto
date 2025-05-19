@@ -1,0 +1,175 @@
+syntax = "proto3";
+
+package order;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./order";
+
+// The Order service definition
+service OrderService {
+  // Create order using a template
+  rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
+  rpc GetListOrder (GetListOrderRequest) returns (GetListOrderResponse);
+}
+
+// The request message containing notification details
+message CreateOrderRequest {
+  string id = 1;       
+  string user_id = 2;         
+  int64 address_id = 3;
+  string status = 4;
+  string shipping_name = 5;
+  string shipping_address = 6;
+  string shipping_phone = 7;
+  string shipping_type = 8;
+  double total_weight = 9;
+  int32  total_quantity = 10;
+  int64 total_product_amount = 11;
+  int64 total_shipping_cost = 12;
+  int64 total_shipping_amount = 13;
+  int64 total_amount = 14;
+  int64  voucher_discount = 15;
+  string notes = 16;
+  string cost_name = 18;
+  string cost_service = 19;
+  int64 voucher_id = 20;
+  repeated CartItem cart_items = 21;
+  string email = 22;
+  google.protobuf.Timestamp created_at = 100;
+}
+
+// The response message after attempting to create order
+message CreateOrderResponse {
+  OrderDetail order = 1;
+  string midtrans_redirect_url = 2;
+  string message = 3;
+}
+
+message CartItem {
+  int64 id = 1;
+  int64 quantity = 2;
+  int64 product_id = 3;
+  int64 product_variant_id = 4;
+  string product_name = 5;
+  string product_real_price = 6;
+  string product_discount_price = 7;
+  int64 product_stock = 8;
+  double product_weight = 9;
+  double product_variant_weight = 10;
+  string product_variant_name = 11;
+  repeated ProductGrocery product_groceries = 12;
+  string product_variant_sub_name = 13;
+  string product_variant_real_price = 14;
+  string product_variant_discount_price = 15;
+  int64 product_variant_stock = 16;
+  repeated ProductImage product_images = 17;
+}
+
+message ProductGrocery {
+  int64 id = 1;
+  int64 min_buy = 2;
+  int64 discount = 3;
+  int64 product_id = 4;
+}
+
+message ProductImage {
+  int64 id = 1;
+  string image_url = 2;
+  int64 position = 3;
+  int64 product_id = 4;
+}
+
+message OrderDetail {
+  string id = 1;
+  string order_date = 2;
+  string status = 3;
+  string shipping_name = 4;
+  string shipping_address = 5;
+  string shipping_phone = 6;
+  string shipping_number = 7;
+  string shipping_type = 8;
+  int64 total_weight = 9;
+  int64 total_quantity = 10;
+  string total_shipping_cost = 11;
+  string total_product_amount = 12;
+  string total_shipping_amount = 13;
+  string total_amount = 14;
+  int64 voucher_discount = 15;
+  string voucher_id = 16;
+  string cost_name = 17;
+  string cost_service = 18;
+  int64 address_id = 19;
+  string user_id = 20;
+  string notes = 21;
+  int64 sub_total = 22;
+}
+
+message GetListOrderRequest {
+  int32 per_page = 1;
+  int32 offset = 2;
+  string search = 3;
+  string status = 4;
+  int32 page = 5;
+  int32 limit = 6;
+  string user_id = 7;
+}
+
+message GetListOrderResponse {
+  repeated GetListOrder orders = 1;
+  int64 total_pages = 2;
+  int64 current_page = 3;
+  int64 page_size = 4;
+  int64 total_data = 5;
+  string message = 6;
+}
+
+message GetListOrder {
+  string id = 1;
+  string order_date = 2;
+  string status = 3;
+  int32 total_quantity = 4;
+  int64 total_amount = 5;
+  string shipping_number = 6;
+  int64 total_shipping_amount = 7;
+  string cost_name = 8;
+  string cost_service = 9;
+  int64 voucher_id = 10;
+  int64 voucher_disc = 11;
+  string notes = 12;
+  int64 sub_total = 13;
+  Address address = 14;
+  repeated OrderItem order_items = 15;
+  Payment payment = 16;
+}
+
+message OrderItem {
+  int64 product_id = 1;
+  string product_name = 2;
+  string product_variant_sub_name = 3;
+  string product_variant = 4;
+  int64 total_amount = 5;
+  int64 product_disc = 6;
+  int32 quantity = 7;
+  int64 fix_price_per_item = 8;
+  repeated ProductImage product_images = 9;
+}
+
+message Payment {
+  string redirect_url = 1;
+}
+
+message Address {
+  int64 id = 1;
+  string province = 2;
+  string city = 3;
+  string district = 4;
+  string subdistrict = 5;
+  string postal_code = 6;
+  string address = 7;
+  string received_name = 8;
+  string user_id = 9;
+  string city_vendor_id = 10;
+  string province_vendor_id = 11;
+  string subdistrict_vendor_id = 12;
+}

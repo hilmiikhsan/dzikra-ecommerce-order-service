@@ -11,6 +11,7 @@ service OrderService {
   // Create order using a template
   rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
   rpc GetListOrder (GetListOrderRequest) returns (GetListOrderResponse);
+  rpc GetOrderById (GetOrderByIdRequest) returns (GetOrderByIdResponse);
 }
 
 // The request message containing notification details
@@ -172,4 +173,13 @@ message Address {
   string city_vendor_id = 10;
   string province_vendor_id = 11;
   string subdistrict_vendor_id = 12;
+}
+
+message GetOrderByIdRequest {
+  string id = 1;
+}
+
+message GetOrderByIdResponse {
+  OrderDetail order = 1;
+  string message = 2;
 }

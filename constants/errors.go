@@ -47,4 +47,5 @@ var (
 	ErrVoucherHasBeenRunOut                = "Voucher has been run out"
 	ErrVoucherExpired                      = "Voucher is expired"
 	ErrVoucherAlreadyUsed                  = "Voucher already used"
+	ErrOrderNotFound                       = "Order not found"
 )

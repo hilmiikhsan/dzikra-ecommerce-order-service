@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/cmd/proto/order"
+	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/constants"
 	"github.com/rs/zerolog/log"
 
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/dto"
@@ -197,5 +198,50 @@ func (api *OrderAPI) GetListOrder(ctx context.Context, req *order.GetListOrderRe
 		CurrentPage: int64(res.CurrentPage),
 		PageSize:    int64(res.PageSize),
 		TotalData:   int64(res.TotalData),
+	}, nil
+}
+
+func (api *OrderAPI) GetOrderById(ctx context.Context, req *order.GetOrderByIdRequest) (*order.GetOrderByIdResponse, error) {
+	res, err := api.OrderService.GetOrderById(ctx, req.Id)
+	if err != nil {
+		if err.Error() == constants.ErrOrderNotFound {
+			return &order.GetOrderByIdResponse{
+				Message: constants.ErrOrderNotFound,
+				Order:   nil,
+			}, nil
+		}
+
+		log.Err(err).Msg("order::GetOrderByID - Failed to get order by id")
+		return &order.GetOrderByIdResponse{
+			Message: "failed to get order by id",
+			Order:   nil,
+		}, nil
+	}
+
+	return &order.GetOrderByIdResponse{
+		Order: &order.OrderDetail{
+			Id:                  res.ID,
+			OrderDate:           res.OrderDate,
+			Status:              res.Status,
+			ShippingName:        res.ShippingName,
+			ShippingAddress:     res.ShippingAddress,
+			ShippingPhone:       res.ShippingPhone,
+			ShippingNumber:      res.ShippingNumber,
+			ShippingType:        res.ShippingType,
+			TotalWeight:         int64(res.TotalWeight),
+			TotalQuantity:       int64(res.TotalQuantity),
+			TotalShippingCost:   res.TotalShippingCost,
+			TotalProductAmount:  res.TotalProductAmount,
+			TotalShippingAmount: res.TotalShippingAmount,
+			TotalAmount:         res.TotalAmount,
+			VoucherDiscount:     int64(res.VoucherDiscount),
+			VoucherId:           res.VoucherID,
+			CostName:            res.CostName,
+			CostService:         res.CostService,
+			AddressId:           int64(res.AddressID),
+			UserId:              res.UserID,
+			Notes:               res.Notes,
+		},
+		Message: "success",
 	}, nil
 }

@@ -2,9 +2,12 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/constants"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/entity"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/ports"
 	"github.com/google/uuid"
@@ -162,4 +165,21 @@ func (r *orderRepository) FindByFilter(ctx context.Context, userID uuid.UUID, of
 	}
 
 	return rows, nil
+}
+
+func (r *orderRepository) FindOrderByID(ctx context.Context, id uuid.UUID) (*entity.Order, error) {
+	var res = new(entity.Order)
+
+	err := r.db.GetContext(ctx, res, r.db.Rebind(queryFindOrderByID), id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Error().Err(err).Msgf("repository::FindOrderByID - order not found: %s", id)
+			return nil, errors.New(constants.ErrOrderNotFound)
+		}
+
+		log.Error().Err(err).Msgf("repository::FindOrderByID - failed to get order by id: %s", id)
+		return nil, err
+	}
+
+	return res, nil
 }

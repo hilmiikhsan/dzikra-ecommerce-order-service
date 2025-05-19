@@ -455,3 +455,46 @@ func (s *orderService) GetListOrder(ctx context.Context, page, limit int, search
 		TotalData:   total,
 	}, nil
 }
+
+func (s *orderService) GetOrderById(ctx context.Context, id string) (*dto.OrderDetail, error) {
+	orderID, err := uuid.Parse(id)
+	if err != nil {
+		log.Error().Err(err).Msg("service::GetOrderById - Failed to parse order ID")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	order, err := s.orderRepository.FindOrderByID(ctx, orderID)
+	if err != nil {
+		if strings.Contains(err.Error(), constants.ErrOrderNotFound) {
+			log.Error().Err(err).Msg("service::GetOrderById - Order not found")
+			return nil, err_msg.NewCustomErrors(fiber.StatusNotFound, err_msg.WithMessage(constants.ErrOrderNotFound))
+		}
+
+		log.Error().Err(err).Msg("service::GetOrderById - Failed to get order by ID")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	return &dto.OrderDetail{
+		ID:                  order.ID.String(),
+		OrderDate:           utils.FormatTime(order.OrderDate),
+		Status:              order.Status,
+		ShippingName:        order.ShippingName,
+		ShippingAddress:     order.ShippingAddress,
+		ShippingPhone:       order.ShippingPhone,
+		ShippingNumber:      order.ShippingNumber,
+		ShippingType:        order.ShippingType,
+		TotalWeight:         int(order.TotalWeight),
+		TotalQuantity:       int(order.TotalQuantity),
+		TotalShippingCost:   fmt.Sprintf("%d", order.TotalShippingCost),
+		TotalProductAmount:  fmt.Sprintf("%d", order.TotalProductAmount),
+		TotalShippingAmount: fmt.Sprintf("%d", order.TotalShippingAmount),
+		TotalAmount:         fmt.Sprintf("%d", order.TotalAmount),
+		VoucherDiscount:     int(order.VoucherDiscount),
+		VoucherID:           fmt.Sprintf("%d", order.VoucherID),
+		CostName:            order.CostName,
+		CostService:         order.CostService,
+		AddressID:           int(order.AddressID),
+		UserID:              order.UserID.String(),
+		Notes:               order.Notes,
+	}, nil
+}

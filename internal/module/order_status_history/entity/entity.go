@@ -9,5 +9,5 @@ type OrderStatusHistory struct {
 	OrderID     uuid.UUID `db:"order_id"`
 	Status      string    `db:"status"`
 	Description string    `db:"description"`
-	ChangedBy   uuid.UUID `db:"changed_by"`
+	ChangedBy   string    `db:"changed_by"`
 }

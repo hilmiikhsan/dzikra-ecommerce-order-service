@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package product_variant;
+
+option go_package = "./product_variant";
+
+
+service ProductVariantService {
+  rpc GetProductVariantStock (GetProductVariantStockRequest) 
+    returns (GetProductVariantStockResponse);
+}
+
+message GetProductVariantStockRequest {
+  int64 id = 1;
+}
+
+message GetProductVariantStockResponse {
+  string message = 1;  
+  int64 stock = 2;
+}

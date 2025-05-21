@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"strings"
 
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/cmd/proto/order"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/constants"
@@ -244,4 +245,195 @@ func (api *OrderAPI) GetOrderById(ctx context.Context, req *order.GetOrderByIdRe
 		},
 		Message: "success",
 	}, nil
+}
+
+func (api *OrderAPI) GetListOrderTransaction(ctx context.Context, req *order.GetListOrderRequest) (*order.GetListOrderResponse, error) {
+	res, err := api.OrderService.GetListOrderTransaction(ctx, int(req.Page), int(req.Limit), req.Search, req.Status)
+	if err != nil {
+		log.Err(err).Msg("order::GetListOrderTransaction - Failed to get list order")
+		return &order.GetListOrderResponse{
+			Message: "failed to get list order",
+			Orders:  nil,
+		}, nil
+	}
+
+	var orders []*order.GetListOrder
+	for _, orderDetail := range res.Orders {
+		var items []*order.OrderItem
+		for _, it := range orderDetail.OrderItems {
+			var imgs []*order.ProductImage
+			for _, pi := range it.ProductImages {
+				imgs = append(imgs, &order.ProductImage{
+					Id:        int64(pi.ID),
+					ImageUrl:  pi.ImageURL,
+					Position:  int64(pi.Position),
+					ProductId: int64(pi.ProductID),
+				})
+			}
+
+			items = append(items, &order.OrderItem{
+				ProductId:             int64(it.ProductID),
+				ProductName:           it.ProductName,
+				ProductVariantSubName: it.ProductVariantSubName,
+				ProductVariant:        it.ProductVariant,
+				TotalAmount:           int64(it.TotalAmount),
+				Quantity:              int32(it.Quantity),
+				FixPricePerItem:       int64(it.FixPricePerItem),
+				ProductImages:         imgs,
+			})
+		}
+
+		orders = append(orders, &order.GetListOrder{
+			Id:                  orderDetail.ID,
+			OrderDate:           orderDetail.OrderDate,
+			Status:              orderDetail.Status,
+			TotalQuantity:       int32(orderDetail.TotalQuantity),
+			TotalAmount:         int64(orderDetail.TotalAmount),
+			ShippingNumber:      orderDetail.ShippingNumber,
+			TotalShippingAmount: int64(orderDetail.TotalShippingAmount),
+			CostName:            orderDetail.CostName,
+			CostService:         orderDetail.CostService,
+			VoucherId:           int64(orderDetail.VoucherID),
+			VoucherDisc:         int64(orderDetail.VoucherDiscount),
+			Notes:               orderDetail.Notes,
+			SubTotal:            int64(orderDetail.SubTotal),
+			Address: &order.Address{
+				Id:                  int64(orderDetail.Address.ID),
+				Province:            orderDetail.Address.Province,
+				City:                orderDetail.Address.City,
+				District:            orderDetail.Address.District,
+				Subdistrict:         orderDetail.Address.SubDistrict,
+				PostalCode:          orderDetail.Address.PostalCode,
+				Address:             orderDetail.Address.Address,
+				ReceivedName:        orderDetail.Address.ReceivedName,
+				UserId:              orderDetail.Address.UserID,
+				CityVendorId:        orderDetail.Address.CityVendorID,
+				ProvinceVendorId:    orderDetail.Address.ProvinceVendorID,
+				SubdistrictVendorId: orderDetail.Address.SubDistrictVendorID,
+			},
+			OrderItems: items,
+			Payment: &order.Payment{
+				RedirectUrl: orderDetail.Payment.RedirectURL,
+			},
+		})
+	}
+
+	return &order.GetListOrderResponse{
+		Message:     "success",
+		Orders:      orders,
+		TotalPages:  int64(res.TotalPages),
+		CurrentPage: int64(res.CurrentPage),
+		PageSize:    int64(res.PageSize),
+		TotalData:   int64(res.TotalData),
+	}, nil
+}
+
+func (api *OrderAPI) UpdateOrderShippingNumber(ctx context.Context, req *order.UpdateOrderShippingNumberRequest) (*order.UpdateOrderShippingNumberResponse, error) {
+	res, err := api.OrderService.UpdateOrderShippingNumber(ctx, &dto.UpdateOrderShippingNumberRequest{
+		ShippingNumber: req.ShippingNumber,
+	}, req.Id)
+	if err != nil {
+		if err.Error() == constants.ErrOrderNotFound {
+			return &order.UpdateOrderShippingNumberResponse{
+				Message: constants.ErrOrderNotFound,
+			}, nil
+		}
+
+		if strings.Contains(err.Error(), constants.ErrShippingNumberAlreadyExists) {
+			return &order.UpdateOrderShippingNumberResponse{
+				Message: constants.ErrShippingNumberAlreadyExists,
+			}, nil
+		}
+
+		log.Err(err).Msg("order::UpdateOrderShippingNumber - Failed to update order shipping number")
+		return &order.UpdateOrderShippingNumberResponse{
+			Message: "failed to update order shipping number",
+		}, nil
+	}
+
+	var voucherID string
+	if res.VoucherID != nil {
+		voucherID = *res.VoucherID
+	} else {
+		voucherID = ""
+	}
+
+	return &order.UpdateOrderShippingNumberResponse{
+		Id:                  res.ID,
+		OrderDate:           res.OrderDate,
+		Status:              res.Status,
+		ShippingName:        res.ShippingName,
+		ShippingAddress:     res.ShippingAddress,
+		ShippingPhone:       res.ShippingPhone,
+		ShippingNumber:      res.ShippingNumber,
+		ShippingType:        res.ShippingType,
+		TotalWeight:         int64(res.TotalWeight),
+		TotalQuantity:       int64(res.TotalQuantity),
+		TotalShippingCost:   res.TotalShippingCost,
+		TotalProductAmount:  res.TotalProductAmount,
+		TotalShippingAmount: res.TotalShippingAmount,
+		TotalAmount:         res.TotalAmount,
+		VoucherDiscount:     int64(res.VoucherDiscount),
+		VoucherId:           voucherID,
+		CostName:            res.CostName,
+		CostService:         res.CostService,
+		AddressId:           int64(res.AddressID),
+		UserId:              res.UserID,
+		Notes:               res.Notes,
+		Message:             "success",
+	}, nil
+}
+
+func (api *OrderAPI) UpdateOrderStatusTransaction(ctx context.Context, req *order.UpdateOrderStatusTransactionRequest) (*order.UpdateOrderStatusTransactionResponse, error) {
+	err := api.OrderService.UpdateOrderStatusTransaction(ctx, &dto.UpdateOrderStatusTransactionRequest{
+		Status: req.Status,
+	}, req.OrderId)
+	if err != nil {
+		log.Err(err).Msg("order::UpdateOrderStatusTransaction - Failed to update order status transaction")
+		return &order.UpdateOrderStatusTransactionResponse{
+			Message: "failed to update order status transaction",
+		}, nil
+	}
+
+	return &order.UpdateOrderStatusTransactionResponse{
+		Message: "success",
+	}, nil
+}
+
+func (api *OrderAPI) GetOrderItemsByOrderID(ctx context.Context, req *order.GetOrderItemsByOrderIDRequest) (*order.GetOrderItemsByOrderIDResponse, error) {
+	orderItems, err := api.OrderService.GetOrderItemsByOrderID(ctx, req.OrderId)
+	if err != nil {
+		log.Error().Err(err).Msg("handler::GetOrderItemsByOrderID - Failed to get order items by order ID")
+		return &order.GetOrderItemsByOrderIDResponse{
+			Message:    "Failed to get order items by order ID",
+			OrderItems: nil,
+		}, nil
+	}
+
+	response := &order.GetOrderItemsByOrderIDResponse{
+		Message:    "success",
+		OrderItems: make([]*order.OrderDetailItem, len(orderItems)),
+	}
+
+	for i, orderItem := range orderItems {
+		var productDiscount int64
+		if orderItem.ProductDiscount != nil {
+			productDiscount = int64(*orderItem.ProductDiscount)
+		} else {
+			productDiscount = 0
+		}
+
+		response.OrderItems[i] = &order.OrderDetailItem{
+			Id:               int64(orderItem.ID),
+			ProductId:        int64(orderItem.ProductID),
+			OrderId:          orderItem.OrderID.String(),
+			ProductName:      orderItem.ProductName,
+			ProductVariant:   orderItem.ProductVariant,
+			ProductDiscount:  productDiscount,
+			Quantity:         int64(orderItem.Quantity),
+			ProductVariantId: int64(orderItem.ProductVariantID),
+		}
+	}
+
+	return response, nil
 }

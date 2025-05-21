@@ -48,4 +48,6 @@ var (
 	ErrVoucherExpired                      = "Voucher is expired"
 	ErrVoucherAlreadyUsed                  = "Voucher already used"
 	ErrOrderNotFound                       = "Order not found"
+	InvalidSignatureKey                    = "Invalid signature key"
+	ErrShippingNumberAlreadyExists         = "Shipping number already exists"
 )

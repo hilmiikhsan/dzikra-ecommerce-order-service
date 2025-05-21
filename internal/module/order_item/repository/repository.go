@@ -47,7 +47,7 @@ func (r *orderItemHistoryRepository) InsertNewOrderItem(ctx context.Context, tx 
 func (r *orderItemHistoryRepository) GetOrderItemsByOrderID(ctx context.Context, tx *sqlx.Tx, orderID string) ([]*entity.OrderItem, error) {
 	var rows []*entity.OrderItem
 
-	if err := r.db.SelectContext(ctx, &rows, r.db.Rebind(queryGetOrderItemsByOrderId), orderID); err != nil {
+	if err := tx.SelectContext(ctx, &rows, r.db.Rebind(queryGetOrderItemsByOrderId), orderID); err != nil {
 		log.Error().Err(err).Msgf("repository::GetOrderItemsByOrderId - failed for order_id=%s", orderID)
 		return nil, err
 	}
@@ -89,4 +89,15 @@ func (r *orderItemHistoryRepository) GetByOrderIDs(ctx context.Context, orderIDs
 	}
 
 	return items, nil
+}
+
+func (r *orderItemHistoryRepository) FindOrderItemsByOrderID(ctx context.Context, orderID string) ([]*entity.OrderItem, error) {
+	var rows []*entity.OrderItem
+
+	if err := r.db.SelectContext(ctx, &rows, r.db.Rebind(queryGetOrderItemsByOrderId), orderID); err != nil {
+		log.Error().Err(err).Msgf("repository::FindOrderItemsByOrderID - failed for order_id=%s", orderID)
+		return nil, err
+	}
+
+	return rows, nil
 }

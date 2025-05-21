@@ -12,6 +12,14 @@ service OrderService {
   rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
   rpc GetListOrder (GetListOrderRequest) returns (GetListOrderResponse);
   rpc GetOrderById (GetOrderByIdRequest) returns (GetOrderByIdResponse);
+  rpc GetListOrderTransaction (GetListOrderRequest) 
+    returns (GetListOrderResponse);
+  rpc UpdateOrderShippingNumber (UpdateOrderShippingNumberRequest) 
+    returns (UpdateOrderShippingNumberResponse);
+  rpc UpdateOrderStatusTransaction (UpdateOrderStatusTransactionRequest)
+    returns (UpdateOrderStatusTransactionResponse);
+  rpc GetOrderItemsByOrderID(GetOrderItemsByOrderIDRequest) 
+    returns (GetOrderItemsByOrderIDResponse);
 }
 
 // The request message containing notification details
@@ -182,4 +190,63 @@ message GetOrderByIdRequest {
 message GetOrderByIdResponse {
   OrderDetail order = 1;
   string message = 2;
+}
+
+message UpdateOrderShippingNumberRequest {
+  string id = 1;
+  string shipping_number = 2;
+}
+
+message UpdateOrderShippingNumberResponse {
+  string id = 1;
+  string order_date = 2;
+  string status = 3;
+  string shipping_name = 4;
+  string shipping_address = 5;
+  string shipping_phone = 6;
+  string shipping_number = 7;
+  string shipping_type = 8;
+  int64 total_weight = 9;
+  int64 total_quantity = 10;
+  string total_shipping_cost = 11;
+  string total_product_amount = 12;
+  string total_shipping_amount = 13;
+  string total_amount = 14;
+  int64 voucher_discount = 15;
+  string voucher_id = 16;
+  string cost_name = 17;
+  string cost_service = 18;
+  int64 address_id = 19;
+  string user_id = 20;
+  string notes = 21;
+  string message = 22;
+}
+
+message UpdateOrderStatusTransactionRequest {
+  string status = 1;
+  string order_id = 2;
+}
+
+message UpdateOrderStatusTransactionResponse {
+  string message = 1;
+}
+
+message GetOrderItemsByOrderIDRequest {
+  string order_id = 1;
+}
+
+message GetOrderItemsByOrderIDResponse {
+  repeated OrderDetailItem order_items = 1;
+  string message = 2;
+}
+
+message OrderDetailItem {
+  int64 id = 1;
+  int64 product_id = 2;
+  string order_id = 3;
+  string product_name = 4;
+  string product_variant = 5;
+  int64 product_discount = 6;
+  int64 quantity = 7;
+  int64 product_variant_id = 8;
 }

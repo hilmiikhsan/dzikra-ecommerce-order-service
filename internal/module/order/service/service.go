@@ -74,7 +74,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 	}
 
 	statusList := []struct{ Code, Desc string }{
-		{constants.StatusOrderCreated, "Pesanan telah dibuat."},
+		{constants.OrderStatusCreated, "Pesanan telah dibuat."},
 		{constants.OrderStatusUnpaid, "Pesanan menunggu pembayaran."},
 	}
 
@@ -83,7 +83,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 			OrderID:     orderResult.ID,
 			Status:      status.Code,
 			Description: status.Desc,
-			ChangedBy:   orderResult.UserID,
+			ChangedBy:   orderResult.UserID.String(),
 		})
 		if err != nil {
 			log.Error().Err(err).Any("payload", req).Msg("service::CreateOrder - Failed to insert new order status history")
@@ -144,26 +144,6 @@ func (s *orderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 			ID:       fmt.Sprintf("%d", ci.ID),
 			Price:    int64(unitPrice),
 			Quantity: int64(ci.Quantity),
-			Name:     name,
-		})
-	}
-
-	orderItems, err := s.orderItemRepository.GetOrderItemsByOrderID(ctx, tx, orderResult.ID.String())
-	if err != nil {
-		log.Error().Err(err).Msg("service::CreateOrder - Failed to get order items for midtrans")
-		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
-	}
-
-	for _, orderItem := range orderItems {
-		name := orderItem.ProductName
-		if orderItem.ProductVariant != "" {
-			name = fmt.Sprintf("%s - %s", orderItem.ProductName, orderItem.ProductVariant)
-		}
-
-		itemDetails = append(itemDetails, midtransDto.ItemDetails{
-			ID:       fmt.Sprintf("%d", orderItem.ID),
-			Price:    int64(orderItem.ProductPrice),
-			Quantity: int64(orderItem.Quantity),
 			Name:     name,
 		})
 	}
@@ -497,4 +477,303 @@ func (s *orderService) GetOrderById(ctx context.Context, id string) (*dto.OrderD
 		UserID:              order.UserID.String(),
 		Notes:               order.Notes,
 	}, nil
+}
+
+func (s *orderService) GetListOrderTransaction(ctx context.Context, page, limit int, search, status string) (*dto.GetListOrderResponse, error) {
+	total, err := s.orderRepository.CountListOrderTransactionByFilter(ctx, search, status)
+	if err != nil {
+		log.Error().Err(err).Msg("service::GetListOrderTransaction - Failed to count order")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	currentPage, perPage, offset := utils.Paginate(page, limit)
+	totalPages := utils.CalculateTotalPages(total, perPage)
+
+	rows, err := s.orderRepository.FindListTransactionOrderByFilter(ctx, offset, perPage, search, status)
+	if err != nil {
+		log.Error().Err(err).Msg("service::GetListOrderTransaction - Failed to find order")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	orderIDs := make([]uuid.UUID, 0, len(rows))
+	addrIDs := make([]int64, 0, len(rows))
+	for _, r := range rows {
+		orderIDs = append(orderIDs, r.ID)
+		addrIDs = append(addrIDs, int64(r.AddressID))
+	}
+
+	items, err := s.orderItemRepository.GetByOrderIDs(ctx, orderIDs)
+	if err != nil {
+		log.Error().Err(err).Msg("service::GetListOrderTransaction - Failed to get order items")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	itemsByOrder := make(map[uuid.UUID][]orderItemHistory.OrderItem, len(items))
+	prodIDsSet := make(map[int64]struct{}, len(items))
+	for _, it := range items {
+		itemsByOrder[it.OrderID] = append(itemsByOrder[it.OrderID], it)
+		prodIDsSet[int64(it.ProductID)] = struct{}{}
+	}
+
+	prodIDs := make([]int64, 0, len(prodIDsSet))
+	for pid := range prodIDsSet {
+		prodIDs = append(prodIDs, pid)
+	}
+
+	imgResp, err := s.externalProductImage.GetImagesByProductIds(ctx, &product_image.GetImagesRequest{
+		ProductIds: prodIDs,
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("service::GetListOrderTransaction - Failed to get product images")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	imagesByProd := make(map[int64][]dto.ProductImage, len(imgResp.Images))
+	for _, img := range imgResp.Images {
+		imagesByProd[img.ProductId] = append(imagesByProd[img.ProductId], dto.ProductImage{
+			ID:        int(img.Id),
+			ImageURL:  img.ImageUrl,
+			Position:  int(img.Position),
+			ProductID: int(img.ProductId),
+		})
+	}
+
+	addrResp, err := s.externalAddress.GetAddressesByIds(ctx, &address.GetAddressesByIdsRequest{
+		Ids: addrIDs,
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("service::GetListOrderTransaction - Failed to get addresses")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	addrsByID := make(map[int32]dto.Address, len(addrResp.Addresses))
+	for _, a := range addrResp.Addresses {
+		addrsByID[a.Id] = dto.Address{
+			ID:                  int(a.Id),
+			Province:            a.Province,
+			ProvinceVendorID:    a.ProvinceVendorId,
+			City:                a.City,
+			CityVendorID:        a.CityVendorId,
+			SubDistrict:         a.Subdistrict,
+			SubDistrictVendorID: a.SubdistrictVendorId,
+			PostalCode:          a.PostalCode,
+			Address:             a.Address,
+			ReceivedName:        a.ReceivedName,
+			UserID:              a.UserId,
+		}
+	}
+
+	out := make([]dto.GetListOrder, 0, len(rows))
+	for _, r := range rows {
+		oiDtos := make([]dto.OrderItem, 0, len(itemsByOrder[r.ID]))
+		for _, it := range itemsByOrder[r.ID] {
+			var subName, variantName string
+			if it.ProductVariant != "" {
+				subName = it.ProductVariant
+				variantName = it.ProductVariant
+			}
+
+			prodImgs := imagesByProd[int64(it.ProductID)]
+
+			oiDtos = append(oiDtos, dto.OrderItem{
+				ProductID:             int(it.ProductID),
+				ProductName:           it.ProductName,
+				ProductVariantSubName: subName,
+				ProductVariant:        variantName,
+				TotalAmount:           it.TotalAmount,
+				ProductDisc:           it.ProductDiscount,
+				Quantity:              it.Quantity,
+				FixPricePerItem:       it.ProductPrice,
+				ProductImages:         prodImgs,
+			})
+		}
+
+		addr := addrsByID[int32(r.AddressID)]
+
+		out = append(out, dto.GetListOrder{
+			ID:                  r.ID.String(),
+			OrderDate:           utils.FormatTime(r.OrderDate),
+			Status:              r.Status,
+			TotalQuantity:       r.TotalQuantity,
+			TotalAmount:         int(r.TotalAmount),
+			ShippingNumber:      r.ShippingNumber,
+			TotalShippingAmount: int(r.TotalShippingAmount),
+			VoucherID:           r.VoucherID,
+			VoucherDiscount:     r.VoucherDiscount,
+			UserID:              r.UserID.String(),
+			Notes:               r.Notes,
+			SubTotal:            int(r.TotalProductAmount),
+			Address:             addr,
+			OrderItems:          oiDtos,
+			Payment:             dto.Payment{},
+		})
+	}
+
+	for i := range out {
+		pay, err := s.orderPaymentRepository.GetLatestByOrderID(ctx, out[i].ID)
+		if err != nil && err != sql.ErrNoRows {
+			log.Error().Err(err).Msg("service::GetListOrderTransaction - Failed to get latest order payment")
+			return nil, err
+		}
+		if pay != nil {
+			var resp struct {
+				RedirectURL string `json:"redirect_url"`
+			}
+
+			err = json.Unmarshal(pay.MidtransResponse, &resp)
+			if err != nil {
+				log.Error().Err(err).Msg("service::GetListOrderTransaction - Failed to unmarshal midtrans response")
+				return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+			}
+
+			out[i].Payment.RedirectURL = resp.RedirectURL
+		}
+	}
+
+	return &dto.GetListOrderResponse{
+		Orders:      out,
+		TotalPages:  totalPages,
+		CurrentPage: currentPage,
+		PageSize:    perPage,
+		TotalData:   total,
+	}, nil
+}
+
+func (s *orderService) UpdateOrderShippingNumber(ctx context.Context, req *dto.UpdateOrderShippingNumberRequest, id string) (*dto.UpdateOrderShippingNumberResponse, error) {
+	orderID, err := uuid.Parse(id)
+	if err != nil {
+		log.Error().Err(err).Msg("service::UpdateOrderShippingNumber - Failed to parse order ID")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	order, err := s.orderRepository.FindOrderByID(ctx, orderID)
+	if err != nil {
+		if strings.Contains(err.Error(), constants.ErrOrderNotFound) {
+			log.Error().Err(err).Msg("service::UpdateOrderShippingNumber - Order not found")
+			return nil, err_msg.NewCustomErrors(fiber.StatusNotFound, err_msg.WithMessage(constants.ErrOrderNotFound))
+		}
+
+		log.Error().Err(err).Msg("service::UpdateOrderShippingNumber - Failed to get order by ID")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	if order.ShippingNumber == req.ShippingNumber {
+		log.Warn().Msg("service::UpdateOrderShippingNumber - Shipping number is the same")
+		return nil, err_msg.NewCustomErrors(fiber.StatusConflict, err_msg.WithMessage(constants.ErrShippingNumberAlreadyExists))
+	}
+
+	// Begin transaction
+	tx, err := s.db.Beginx()
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("service::UpdateOrderShippingNumber - Failed to begin transaction")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				log.Error().Err(rollbackErr).Any("payload", req).Msg("service::UpdateOrderShippingNumber - Failed to rollback transaction")
+			}
+		}
+	}()
+
+	res, err := s.orderRepository.UpdateShippingNumber(ctx, tx, orderID, req.ShippingNumber)
+	if err != nil {
+		log.Error().Err(err).Msg("service::UpdateOrderShippingNumber - Failed to update shipping number")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("service::UpdateOrderShippingNumber - Failed to commit transaction")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	var voucherID *string
+	if order.VoucherID != 0 {
+		s := fmt.Sprintf("%d", order.VoucherID)
+		voucherID = &s
+	} else {
+		voucherID = nil
+	}
+
+	return &dto.UpdateOrderShippingNumberResponse{
+		ID:                  res.ID.String(),
+		OrderDate:           utils.FormatTime(res.OrderDate),
+		Status:              res.Status,
+		ShippingName:        res.ShippingName,
+		ShippingAddress:     res.ShippingAddress,
+		ShippingPhone:       res.ShippingPhone,
+		ShippingNumber:      res.ShippingNumber,
+		ShippingType:        res.ShippingType,
+		TotalQuantity:       int(res.TotalQuantity),
+		TotalWeight:         int(res.TotalWeight),
+		TotalProductAmount:  fmt.Sprintf("%d", res.TotalProductAmount),
+		TotalShippingCost:   fmt.Sprintf("%d", res.TotalShippingCost),
+		TotalShippingAmount: fmt.Sprintf("%d", res.TotalShippingAmount),
+		TotalAmount:         fmt.Sprintf("%d", res.TotalAmount),
+		VoucherDiscount:     int(order.VoucherDiscount),
+		VoucherID:           voucherID,
+		CostName:            order.CostName,
+		CostService:         order.CostService,
+		AddressID:           int(order.AddressID),
+		UserID:              order.UserID.String(),
+		Notes:               order.Notes,
+	}, nil
+}
+
+func (s *orderService) UpdateOrderStatusTransaction(ctx context.Context, req *dto.UpdateOrderStatusTransactionRequest, id string) error {
+	// Begin transaction
+	tx, err := s.db.Beginx()
+	if err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("service::UpdateOrderStatusTransaction - Failed to begin transaction")
+		return err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				log.Error().Err(rollbackErr).Any("payload", req).Msg("service::UpdateOrderStatusTransaction - Failed to rollback transaction")
+			}
+		}
+	}()
+
+	orderID, err := uuid.Parse(id)
+	if err != nil {
+		log.Error().Err(err).Msg("service::UpdateOrderStatusTransaction - Failed to parse order ID")
+		return err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	err = s.orderRepository.UpdateOrderTransactionStatus(ctx, tx, orderID, req.Status)
+	if err != nil {
+		log.Error().Err(err).Msg("service::UpdateOrderStatusTransaction - Failed to update order status")
+		return err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	err = s.orderStatusHistoryRepository.InsertNewOrderStatusHistory(ctx, tx, &orderStatusHistory.OrderStatusHistory{
+		OrderID:     orderID,
+		Status:      req.Status,
+		Description: "",
+		ChangedBy:   "Sistem",
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("service::UpdateOrderStatusTransaction - Failed to insert order status history")
+		return err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		log.Error().Err(err).Any("payload", req).Msg("service::UpdateOrderStatusTransaction - Failed to commit transaction")
+		return err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	return nil
+}
+
+func (s *orderService) GetOrderItemsByOrderID(ctx context.Context, orderID string) ([]*orderItemHistory.OrderItem, error) {
+	orderItems, err := s.orderItemRepository.FindOrderItemsByOrderID(ctx, orderID)
+	if err != nil {
+		log.Error().Err(err).Msg("service::GetOrderItemsByOrderID - Failed to get order items by order ID")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	return orderItems, nil
 }

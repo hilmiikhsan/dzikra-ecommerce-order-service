@@ -4,7 +4,9 @@ import (
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/cmd/proto/order"
 	externalAddress "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/external/address"
 	externalCart "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/external/cart"
+	externalProduct "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/external/product"
 	externalProductImage "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/external/product_image"
+	externalProductVariant "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/external/product_variant"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/adapter"
 	midtransService "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/integration/midtrans/service"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/ports"
@@ -27,6 +29,8 @@ func NewOrderAPI() *OrderAPI {
 	externalOrder := &externalCart.External{}
 	externalProductImage := &externalProductImage.External{}
 	externalAddress := &externalAddress.External{}
+	externalProductVariant := &externalProductVariant.External{}
+	externalProduct := &externalProduct.External{}
 
 	// integration service
 	midtransService := midtransService.NewMidtransService(adapter.Adapters.DzikraMidtrans)
@@ -48,6 +52,8 @@ func NewOrderAPI() *OrderAPI {
 		orderPaymentRepository,
 		externalProductImage,
 		externalAddress,
+		externalProductVariant,
+		externalProduct,
 	)
 
 	// handler

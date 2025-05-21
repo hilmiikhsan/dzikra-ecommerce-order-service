@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS order_status_histories (
     order_id UUID NOT NULL,
     status VARCHAR(100) NOT NULL,
     description TEXT,
-    changed_by UUID NOT NULL,
+    changed_by VARCHAR(100) NOT NULL,
     changed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/constants"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/entity"
@@ -319,4 +320,15 @@ func (r *orderRepository) UpdateOrderTransactionStatus(ctx context.Context, tx *
 	}
 
 	return nil
+}
+
+func (r *orderRepository) CalculateTotalSummary(ctx context.Context, startDate, endDate time.Time) (*entity.OrderHistory, error) {
+	var res entity.OrderHistory
+
+	if err := r.db.GetContext(ctx, &res, r.db.Rebind(queryCalculateTotalSummary), startDate, endDate); err != nil {
+		log.Error().Err(err).Msg("repository::CalculateTotalSummary - failed to get order history stats")
+		return nil, err
+	}
+
+	return &res, nil
 }

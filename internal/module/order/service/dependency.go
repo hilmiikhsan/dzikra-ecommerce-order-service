@@ -9,6 +9,7 @@ import (
 	midtransPorts "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/integration/midtrans/ports"
 	orderPorts "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/ports"
 	orderItemPorts "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_item/ports"
+	orderItemHistoryPorts "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_item_history/ports"
 	orderPaymentPorts "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_payment/ports"
 	orderStatusHistoryPorts "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_status_history/ports"
 	"github.com/jmoiron/sqlx"
@@ -28,6 +29,7 @@ type orderService struct {
 	externalAddress              externalAddress.ExternalAddress
 	externalProductVariant       externalProductVariant.ExternalProductVariant
 	externalProduct              externalProduct.ExternalProduct
+	orderItemHistoryRepository   orderItemHistoryPorts.OrderItemHistoryRepository
 }
 
 func NewOrderService(
@@ -42,6 +44,7 @@ func NewOrderService(
 	externalAddress externalAddress.ExternalAddress,
 	externalProductVariant externalProductVariant.ExternalProductVariant,
 	externalProduct externalProduct.ExternalProduct,
+	orderItemHistoryRepository orderItemHistoryPorts.OrderItemHistoryRepository,
 ) *orderService {
 	return &orderService{
 		db:                           db,
@@ -55,5 +58,6 @@ func NewOrderService(
 		externalAddress:              externalAddress,
 		externalProductVariant:       externalProductVariant,
 		externalProduct:              externalProduct,
+		orderItemHistoryRepository:   orderItemHistoryRepository,
 	}
 }

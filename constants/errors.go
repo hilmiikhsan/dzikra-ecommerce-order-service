@@ -50,4 +50,6 @@ var (
 	ErrOrderNotFound                       = "Order not found"
 	InvalidSignatureKey                    = "Invalid signature key"
 	ErrShippingNumberAlreadyExists         = "Shipping number already exists"
+	ErrInvalidStartDate                    = "Invalid start date format"
+	ErrInvalidEndDate                      = "Invalid end date format"
 )

@@ -777,3 +777,40 @@ func (s *orderService) GetOrderItemsByOrderID(ctx context.Context, orderID strin
 
 	return orderItems, nil
 }
+
+func (s *orderService) CalculateTotalSummary(ctx context.Context, startDate, endDate string) (*dto.CalculateTotalSummaryResponse, error) {
+	start, err := utils.ParseDateToUTC(startDate)
+	if err != nil {
+		log.Error().Err(err).Msg("service::CalculateTotalSummary - error parsing start date")
+		return nil, err_msg.NewCustomErrors(fiber.StatusBadRequest, err_msg.WithMessage(constants.ErrInvalidStartDate))
+	}
+
+	end, err := utils.ParseEndDateToUTC(endDate)
+	if err != nil {
+		log.Error().Err(err).Msg("service::CalculateTotalSummary - error parsing end date")
+		return nil, err_msg.NewCustomErrors(fiber.StatusBadRequest, err_msg.WithMessage(constants.ErrInvalidEndDate))
+	}
+
+	orderHistoryResult, err := s.orderRepository.CalculateTotalSummary(ctx, start, end)
+	if err != nil {
+		log.Error().Err(err).Msg("service::CalculateTotalSummary - Failed to calculate total summary")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	totalCapital, err := s.orderItemHistoryRepository.SumProductCapital(ctx, start, end)
+	if err != nil {
+		log.Error().Err(err).Msg("service::CalculateTotalSummary - Failed to calculate total summary")
+		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))
+	}
+
+	totalAmountMonthly := orderHistoryResult.SumAmount - orderHistoryResult.SumShipping
+	netSales := orderHistoryResult.SumAmount - orderHistoryResult.SumShipping - totalCapital
+
+	return &dto.CalculateTotalSummaryResponse{
+		TotalAmount:         totalAmountMonthly,
+		TotalTransaction:    float64(orderHistoryResult.CountTx),
+		TotalSellingProduct: int(orderHistoryResult.SumQuantity),
+		TotalCapital:        totalCapital,
+		Netsales:            netSales,
+	}, nil
+}

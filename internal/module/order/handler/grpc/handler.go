@@ -437,3 +437,22 @@ func (api *OrderAPI) GetOrderItemsByOrderID(ctx context.Context, req *order.GetO
 
 	return response, nil
 }
+
+func (api *OrderAPI) CalculateTotalSummary(ctx context.Context, req *order.CalculateTotalSummaryRequest) (*order.CalculateTotalSummaryResponse, error) {
+	res, err := api.OrderService.CalculateTotalSummary(ctx, req.StartDate, req.EndDate)
+	if err != nil {
+		log.Err(err).Msg("order::CalculateTotalSummary - Failed to calculate total summary")
+		return &order.CalculateTotalSummaryResponse{
+			Message: "failed to calculate total summary",
+		}, nil
+	}
+
+	return &order.CalculateTotalSummaryResponse{
+		Message:             "success",
+		TotalAmount:         res.TotalAmount,
+		TotalTransaction:    res.TotalTransaction,
+		TotalSellingProduct: int64(res.TotalSellingProduct),
+		TotalCapital:        res.TotalCapital,
+		NetSales:            res.Netsales,
+	}, nil
+}

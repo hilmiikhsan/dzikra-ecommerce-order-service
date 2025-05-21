@@ -121,4 +121,14 @@ const (
 			id = ?
 			AND deleted_at IS NULL
 	`
+
+	queryCalculateTotalSummary = `
+		SELECT
+			COALESCE(SUM(total_shipping_amount),0)  AS sum_shipping,
+			COALESCE(SUM(total_amount),0)           AS sum_amount,
+			COUNT(*)                                AS count_tx,
+			COALESCE(SUM(total_quantity),0)         AS sum_quantity
+		FROM order_histories
+		WHERE order_date BETWEEN ? AND ?
+	`
 )

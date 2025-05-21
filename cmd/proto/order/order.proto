@@ -20,6 +20,8 @@ service OrderService {
     returns (UpdateOrderStatusTransactionResponse);
   rpc GetOrderItemsByOrderID(GetOrderItemsByOrderIDRequest) 
     returns (GetOrderItemsByOrderIDResponse);
+  rpc CalculateTotalSummary(CalculateTotalSummaryRequest)
+    returns (CalculateTotalSummaryResponse);
 }
 
 // The request message containing notification details
@@ -249,4 +251,18 @@ message OrderDetailItem {
   int64 product_discount = 6;
   int64 quantity = 7;
   int64 product_variant_id = 8;
+}
+
+message CalculateTotalSummaryRequest {
+  string start_date = 1;
+  string end_date = 2;
+}
+
+message CalculateTotalSummaryResponse {
+  double total_amount = 1;
+  double total_transaction = 2;
+  int64 total_selling_product = 3;
+  double total_capital = 4;
+  double net_sales = 5;
+  string message = 6;
 }

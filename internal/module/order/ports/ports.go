@@ -2,6 +2,7 @@ package ports
 
 import (
 	"context"
+	"time"
 
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/dto"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/entity"
@@ -19,6 +20,7 @@ type OrderRepository interface {
 	FindOrderByID(ctx context.Context, id uuid.UUID) (*entity.Order, error)
 	UpdateShippingNumber(ctx context.Context, tx *sqlx.Tx, id uuid.UUID, shippingNumber string) (*entity.Order, error)
 	UpdateOrderTransactionStatus(ctx context.Context, tx *sqlx.Tx, id uuid.UUID, status string) error
+	CalculateTotalSummary(ctx context.Context, startDate, endDate time.Time) (*entity.OrderHistory, error)
 }
 
 type OrderService interface {
@@ -29,4 +31,5 @@ type OrderService interface {
 	UpdateOrderShippingNumber(ctx context.Context, req *dto.UpdateOrderShippingNumberRequest, id string) (*dto.UpdateOrderShippingNumberResponse, error)
 	UpdateOrderStatusTransaction(ctx context.Context, req *dto.UpdateOrderStatusTransactionRequest, id string) error
 	GetOrderItemsByOrderID(ctx context.Context, orderID string) ([]*orderItem.OrderItem, error)
+	CalculateTotalSummary(ctx context.Context, startDate, endDate string) (*dto.CalculateTotalSummaryResponse, error)
 }

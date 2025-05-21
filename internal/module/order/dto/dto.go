@@ -191,3 +191,11 @@ type UpdateOrderShippingNumberResponse struct {
 type UpdateOrderStatusTransactionRequest struct {
 	Status string `json:"status" validate:"required,min=3,max=50,xss_safe"`
 }
+
+type CalculateTotalSummaryResponse struct {
+	TotalAmount         float64 `json:"total_amount"`
+	TotalTransaction    float64 `json:"total_transaction"`
+	TotalSellingProduct int     `json:"total_selling_product"`
+	TotalCapital        float64 `json:"total_capital"`
+	Netsales            float64 `json:"net_sales"`
+}

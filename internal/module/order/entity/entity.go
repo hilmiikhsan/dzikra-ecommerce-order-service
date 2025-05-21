@@ -30,3 +30,10 @@ type Order struct {
 	OrderDate           time.Time `db:"order_date"`
 	CreatedAt           time.Time `db:"created_at"`
 }
+
+type OrderHistory struct {
+	SumShipping float64 `db:"sum_shipping"`
+	SumAmount   float64 `db:"sum_amount"`
+	CountTx     int64   `db:"count_tx"`
+	SumQuantity int64   `db:"sum_quantity"`
+}

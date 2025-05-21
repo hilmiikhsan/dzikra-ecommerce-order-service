@@ -13,6 +13,7 @@ import (
 	orderRepository "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/repository"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/service"
 	orderItemRepository "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_item/repository"
+	orderItemHistoryRepository "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_item_history/repository"
 	orderPaymentRepository "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_payment/repository"
 	orderStatusHistoryRepository "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_status_history/repository"
 )
@@ -40,6 +41,7 @@ func NewOrderAPI() *OrderAPI {
 	orderStatusHistoryRepository := orderStatusHistoryRepository.NewOrderStatusHistoryRepository(adapter.Adapters.DzikraPostgres)
 	orderItemRepository := orderItemRepository.NewOrderItemRepository(adapter.Adapters.DzikraPostgres)
 	orderPaymentRepository := orderPaymentRepository.NewOrderPaymentRepository(adapter.Adapters.DzikraPostgres)
+	orderItemHistoryRepository := orderItemHistoryRepository.NewOrderItemHistoryRepository(adapter.Adapters.DzikraPostgres)
 
 	// service
 	orderService := service.NewOrderService(
@@ -54,6 +56,7 @@ func NewOrderAPI() *OrderAPI {
 		externalAddress,
 		externalProductVariant,
 		externalProduct,
+		orderItemHistoryRepository,
 	)
 
 	// handler

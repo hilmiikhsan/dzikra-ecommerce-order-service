@@ -29,3 +29,23 @@ func FormatTimeJakarta() time.Time {
 	}
 	return time.Now().In(loc)
 }
+
+func ParseDateToUTC(dateStr string) (time.Time, error) {
+	loc, _ := time.LoadLocation(constants.TimeLocationAsiaJakarta)
+	t, err := time.ParseInLocation("02-01-2006", dateStr, loc)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC), nil
+}
+
+func ParseEndDateToUTC(dateStr string) (time.Time, error) {
+	loc, _ := time.LoadLocation(constants.TimeLocationAsiaJakarta)
+	t, err := time.ParseInLocation("02-01-2006", dateStr, loc)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.UTC), nil
+}

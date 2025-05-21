@@ -30,6 +30,7 @@ type OrderServiceClient interface {
 	UpdateOrderShippingNumber(ctx context.Context, in *UpdateOrderShippingNumberRequest, opts ...grpc.CallOption) (*UpdateOrderShippingNumberResponse, error)
 	UpdateOrderStatusTransaction(ctx context.Context, in *UpdateOrderStatusTransactionRequest, opts ...grpc.CallOption) (*UpdateOrderStatusTransactionResponse, error)
 	GetOrderItemsByOrderID(ctx context.Context, in *GetOrderItemsByOrderIDRequest, opts ...grpc.CallOption) (*GetOrderItemsByOrderIDResponse, error)
+	CalculateTotalSummary(ctx context.Context, in *CalculateTotalSummaryRequest, opts ...grpc.CallOption) (*CalculateTotalSummaryResponse, error)
 }
 
 type orderServiceClient struct {
@@ -103,6 +104,15 @@ func (c *orderServiceClient) GetOrderItemsByOrderID(ctx context.Context, in *Get
 	return out, nil
 }
 
+func (c *orderServiceClient) CalculateTotalSummary(ctx context.Context, in *CalculateTotalSummaryRequest, opts ...grpc.CallOption) (*CalculateTotalSummaryResponse, error) {
+	out := new(CalculateTotalSummaryResponse)
+	err := c.cc.Invoke(ctx, "/order.OrderService/CalculateTotalSummary", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility
@@ -115,6 +125,7 @@ type OrderServiceServer interface {
 	UpdateOrderShippingNumber(context.Context, *UpdateOrderShippingNumberRequest) (*UpdateOrderShippingNumberResponse, error)
 	UpdateOrderStatusTransaction(context.Context, *UpdateOrderStatusTransactionRequest) (*UpdateOrderStatusTransactionResponse, error)
 	GetOrderItemsByOrderID(context.Context, *GetOrderItemsByOrderIDRequest) (*GetOrderItemsByOrderIDResponse, error)
+	CalculateTotalSummary(context.Context, *CalculateTotalSummaryRequest) (*CalculateTotalSummaryResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -142,6 +153,9 @@ func (UnimplementedOrderServiceServer) UpdateOrderStatusTransaction(context.Cont
 }
 func (UnimplementedOrderServiceServer) GetOrderItemsByOrderID(context.Context, *GetOrderItemsByOrderIDRequest) (*GetOrderItemsByOrderIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrderItemsByOrderID not implemented")
+}
+func (UnimplementedOrderServiceServer) CalculateTotalSummary(context.Context, *CalculateTotalSummaryRequest) (*CalculateTotalSummaryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CalculateTotalSummary not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 
@@ -282,6 +296,24 @@ func _OrderService_GetOrderItemsByOrderID_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_CalculateTotalSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CalculateTotalSummaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).CalculateTotalSummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/order.OrderService/CalculateTotalSummary",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).CalculateTotalSummary(ctx, req.(*CalculateTotalSummaryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -316,6 +348,10 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetOrderItemsByOrderID",
 			Handler:    _OrderService_GetOrderItemsByOrderID_Handler,
+		},
+		{
+			MethodName: "CalculateTotalSummary",
+			Handler:    _OrderService_CalculateTotalSummary_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

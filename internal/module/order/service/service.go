@@ -165,7 +165,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 	}
 
 	// mapping transaction on Midtrans
-	midtransReq := &midtransDto.CreateTransactionRequest{
+	midtransReq := &midtransDto.CreateTransactionEcommerceRequest{
 		OrderID:         orderResult.ID.String(),
 		TotalAmount:     orderResult.TotalAmount,
 		ItemDetails:     itemDetails,
@@ -176,7 +176,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 	}
 
 	// create transaction on Midtrans
-	midtransResp, err := s.midtransService.CreateTransaction(ctx, midtransReq)
+	midtransResp, err := s.midtransService.CreateTransactionEcommerce(ctx, midtransReq)
 	if err != nil {
 		log.Error().Err(err).Any("payload", req).Msg("service::CreateOrder - Failed to create transaction on Midtrans")
 		return nil, err_msg.NewCustomErrors(fiber.StatusInternalServerError, err_msg.WithMessage(constants.ErrInternalServerError))

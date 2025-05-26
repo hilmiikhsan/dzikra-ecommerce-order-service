@@ -8,10 +8,12 @@ import (
 	"syscall"
 
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/cmd/proto/order"
+	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/cmd/proto/transaction"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/adapter"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/infrastructure"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/infrastructure/config"
 	orderService "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/handler/grpc"
+	transactionService "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/transaction/handler/grpc"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
@@ -50,6 +52,7 @@ func RunServeGRPC() {
 	}
 
 	order.RegisterOrderServiceServer(grpcServer, orderService.NewOrderAPI())
+	transaction.RegisterTransactionServiceServer(grpcServer, transactionService.NewTransactionAPI())
 
 	go func() {
 		log.Info().Msgf("gRPC server is running on port %s", envs.App.GrpcPort)

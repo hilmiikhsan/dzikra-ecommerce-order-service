@@ -8,5 +8,6 @@ import (
 )
 
 type MidtransService interface {
-	CreateTransaction(ctx context.Context, req *dto.CreateTransactionRequest) (*snap.Response, error)
+	CreateTransactionEcommerce(ctx context.Context, req *dto.CreateTransactionEcommerceRequest) (*snap.Response, error)
+	CreateTransactionPOS(ctx context.Context, req *dto.CreateTransactionPOSRequest) (*dto.CreateTransactionPOSResponse, error)
 }

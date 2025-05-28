@@ -9,8 +9,19 @@ import (
 	"time"
 
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/constants"
+	externalNotification "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/external/notification"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/adapter"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/infrastructure/config"
+	redisRepository "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/infrastructure/redis"
+	orderConsumer "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/integration/rabbitmq/consumer/ports"
+	consumerSerice "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/integration/rabbitmq/consumer/service"
+	deliveryConsumer "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/integration/rabbitmq/delivery_consumer/ports"
+	deliveryConsumerSerice "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/integration/rabbitmq/delivery_consumer/service"
+	rajaongkirService "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/integration/rajaongkir/service"
+	orderRepository "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/repository"
+	orderItemHistoryRepository "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_item_history/repository"
+	orderPaymentRepository "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_payment/repository"
+	orderStatusHistory "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_status_history/repository"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/route"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/pkg/validator"
 	"github.com/gofiber/fiber/v2"
@@ -64,6 +75,7 @@ func RunServerHTTP(cmd *flag.FlagSet, args []string) {
 		adapter.WithDzikraPostgres(),
 		adapter.WithDzikraRedis(),
 		adapter.WithDzikraMidtrans(),
+		adapter.WithRabbitMQ(),
 		adapter.WithValidator(validator.NewValidator()),
 	)
 
@@ -82,6 +94,59 @@ func RunServerHTTP(cmd *flag.FlagSet, args []string) {
 	// 		fmt.Printf("Method: %s, Path: %s\n", handler.Method, handler.Path)
 	// 	}
 	// }
+
+	// repository
+	orderRepository := orderRepository.NewOrderRepository(adapter.Adapters.DzikraPostgres)
+	orderStatusHistoryRepository := orderStatusHistory.NewOrderStatusHistoryRepository(adapter.Adapters.DzikraPostgres)
+	orderPaymentRepository := orderPaymentRepository.NewOrderPaymentRepository(adapter.Adapters.DzikraPostgres)
+	externalNotification := &externalNotification.External{}
+	redisRepository := redisRepository.NewRedisRepository(adapter.Adapters.DzikraRedis)
+	rajaongkirService := rajaongkirService.NewRajaongkirService(redisRepository)
+	orderItemHistoryRepository := orderItemHistoryRepository.NewOrderItemHistoryRepository(adapter.Adapters.DzikraPostgres)
+
+	// consumer expire service
+	consumerSerice := consumerSerice.NewConsumerService(
+		adapter.Adapters.DzikraPostgres,
+		orderRepository,
+		orderPaymentRepository,
+		orderStatusHistoryRepository,
+		externalNotification,
+	)
+
+	// Start expire consumer
+	go func() {
+		if err := orderConsumer.StartExpireConsumer(
+			adapter.Adapters.RabbitMQConn,
+			adapter.Adapters.DzikraPostgres,
+			adapter.Adapters.DzikraRedis,
+			consumerSerice,
+		); err != nil {
+			log.Fatal().Err(err).Msg("Failed to start expire consumer")
+		}
+	}()
+
+	// delivery consumer service
+	deliveryConsumerSerice := deliveryConsumerSerice.NewDeliveryConsumerService(
+		adapter.Adapters.DzikraPostgres,
+		orderRepository,
+		orderPaymentRepository,
+		orderStatusHistoryRepository,
+		externalNotification,
+		rajaongkirService,
+		orderItemHistoryRepository,
+	)
+
+	// Start delivery consumer
+	go func() {
+		if err := deliveryConsumer.StartDeliveryConsumer(
+			adapter.Adapters.RabbitMQConn,
+			adapter.Adapters.DzikraPostgres,
+			adapter.Adapters.DzikraRedis,
+			deliveryConsumerSerice,
+		); err != nil {
+			log.Fatal().Err(err).Msg("start delivery consumer")
+		}
+	}()
 
 	// Run server in goroutine
 	go func() {

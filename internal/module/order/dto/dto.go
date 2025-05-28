@@ -41,6 +41,7 @@ type CreateOrderRequest struct {
 type CreateOrderResponse struct {
 	Order               OrderDetail `json:"order"`
 	MidtransRedirectUrl string      `json:"midtrans_redirect_url"`
+	PaymentID           string      `json:"payment_id"`
 }
 
 type OrderDetail struct {
@@ -143,6 +144,7 @@ type OrderItem struct {
 
 type Payment struct {
 	RedirectURL string `json:"redirect_url"`
+	Status      string `json:"status"`
 }
 
 type Address struct {

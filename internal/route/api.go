@@ -1,17 +1,20 @@
 package route
 
 import (
+	orderPayment "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_payment/handler/rest"
 	"github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/pkg/response"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
 )
 
 func SetupRoutes(app *fiber.App) {
-	// var (
-	// 	userAPI       = app.Group("/api/users")
-	// 	superadminAPI = app.Group("/api/superadmin")
-	// 	publicAPI     = app.Group("/api")
-	// )
+	var (
+		// 	userAPI       = app.Group("/api/users")
+		// 	superadminAPI = app.Group("/api/superadmin")
+		publicAPI = app.Group("/api")
+	)
+
+	orderPayment.NewOrderPaymentHandler().OrderPaymentRoute(publicAPI)
 
 	// fallback route
 	app.Use(func(c *fiber.Ctx) error {

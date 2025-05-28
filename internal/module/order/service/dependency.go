@@ -7,6 +7,7 @@ import (
 	externalProductImage "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/external/product_image"
 	externalProductVariant "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/external/product_variant"
 	midtransPorts "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/integration/midtrans/ports"
+	rajaongkirPorts "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/integration/rajaongkir/ports"
 	orderPorts "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order/ports"
 	orderItemPorts "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_item/ports"
 	orderItemHistoryPorts "github.com/Digitalkeun-Creative/be-dzikra-ecommerce-order-service/internal/module/order_item_history/ports"
@@ -30,6 +31,7 @@ type orderService struct {
 	externalProductVariant       externalProductVariant.ExternalProductVariant
 	externalProduct              externalProduct.ExternalProduct
 	orderItemHistoryRepository   orderItemHistoryPorts.OrderItemHistoryRepository
+	rajaOngkirService            rajaongkirPorts.RajaongkirService
 }
 
 func NewOrderService(
@@ -45,6 +47,7 @@ func NewOrderService(
 	externalProductVariant externalProductVariant.ExternalProductVariant,
 	externalProduct externalProduct.ExternalProduct,
 	orderItemHistoryRepository orderItemHistoryPorts.OrderItemHistoryRepository,
+	rajaOngkirService rajaongkirPorts.RajaongkirService,
 ) *orderService {
 	return &orderService{
 		db:                           db,
@@ -59,5 +62,6 @@ func NewOrderService(
 		externalProductVariant:       externalProductVariant,
 		externalProduct:              externalProduct,
 		orderItemHistoryRepository:   orderItemHistoryRepository,
+		rajaOngkirService:            rajaOngkirService,
 	}
 }

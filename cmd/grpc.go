@@ -44,6 +44,7 @@ func RunServeGRPC() {
 		adapter.WithDzikraPostgres(),
 		adapter.WithDzikraRedis(),
 		adapter.WithDzikraMidtrans(),
+		adapter.WithRabbitMQ(),
 	}
 
 	// Sync adapters

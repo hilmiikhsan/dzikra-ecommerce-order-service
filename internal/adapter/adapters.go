@@ -9,6 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/midtrans/midtrans-go/snap"
 	"github.com/rs/zerolog/log"
+	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
 )
 
@@ -31,6 +32,7 @@ type Adapter struct {
 	DzikraPostgres *sqlx.DB
 	DzikraRedis    *redis.Client
 	DzikraMidtrans *snap.Client
+	RabbitMQConn   *amqp.Connection
 	Validator      Validator // *validator.Validator
 }
 
@@ -51,6 +53,10 @@ func (a *Adapter) Sync(opts ...Option) error {
 
 	if a.DzikraMidtrans == nil {
 		errs = append(errs, "Dzikra Midtrans not initialized")
+	}
+
+	if a.RabbitMQConn == nil {
+		errs = append(errs, "RabbitMQ not initialized")
 	}
 
 	if a.GRPCServer == nil && a.RestServer == nil {
@@ -93,6 +99,13 @@ func (a *Adapter) Unsync() error {
 			errs = append(errs, err.Error())
 		}
 		log.Info().Msg("Dzikra Redis disconnected")
+	}
+
+	if a.RabbitMQConn != nil {
+		if err := a.RabbitMQConn.Close(); err != nil {
+			errs = append(errs, err.Error())
+		}
+		log.Info().Msg("RabbitMQ disconnected")
 	}
 
 	if len(errs) > 0 {

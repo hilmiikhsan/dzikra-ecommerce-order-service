@@ -332,3 +332,16 @@ func (r *orderRepository) CalculateTotalSummary(ctx context.Context, startDate, 
 
 	return &res, nil
 }
+
+func (r *orderRepository) UpdateStatus(ctx context.Context, tx *sqlx.Tx, data *entity.Order) error {
+	_, err := tx.ExecContext(ctx, r.db.Rebind(queryUpdateOrderStatus),
+		data.Status,
+		data.ID,
+	)
+	if err != nil {
+		log.Error().Err(err).Msgf("repository::UpdateStatus - failed to update order status: %s", data.ID)
+		return err
+	}
+
+	return nil
+}

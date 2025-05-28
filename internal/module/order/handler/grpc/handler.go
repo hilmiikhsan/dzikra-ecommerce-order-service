@@ -118,6 +118,7 @@ func (api *OrderAPI) CreateOrder(ctx context.Context, req *order.CreateOrderRequ
 			Notes:               res.Order.Notes,
 		},
 		MidtransRedirectUrl: res.MidtransRedirectUrl,
+		PaymentId:           res.PaymentID,
 	}, nil
 }
 
@@ -160,7 +161,7 @@ func (api *OrderAPI) GetListOrder(ctx context.Context, req *order.GetListOrderRe
 		orders = append(orders, &order.GetListOrder{
 			Id:                  orderDetail.ID,
 			OrderDate:           orderDetail.OrderDate,
-			Status:              orderDetail.Status,
+			Status:              orderDetail.Payment.Status,
 			TotalQuantity:       int32(orderDetail.TotalQuantity),
 			TotalAmount:         int64(orderDetail.TotalAmount),
 			ShippingNumber:      orderDetail.ShippingNumber,
@@ -286,7 +287,7 @@ func (api *OrderAPI) GetListOrderTransaction(ctx context.Context, req *order.Get
 		orders = append(orders, &order.GetListOrder{
 			Id:                  orderDetail.ID,
 			OrderDate:           orderDetail.OrderDate,
-			Status:              orderDetail.Status,
+			Status:              orderDetail.Payment.Status,
 			TotalQuantity:       int32(orderDetail.TotalQuantity),
 			TotalAmount:         int64(orderDetail.TotalAmount),
 			ShippingNumber:      orderDetail.ShippingNumber,
@@ -314,6 +315,7 @@ func (api *OrderAPI) GetListOrderTransaction(ctx context.Context, req *order.Get
 			OrderItems: items,
 			Payment: &order.Payment{
 				RedirectUrl: orderDetail.Payment.RedirectURL,
+				Status:      orderDetail.Payment.Status,
 			},
 		})
 	}
@@ -342,6 +344,12 @@ func (api *OrderAPI) UpdateOrderShippingNumber(ctx context.Context, req *order.U
 		if strings.Contains(err.Error(), constants.ErrShippingNumberAlreadyExists) {
 			return &order.UpdateOrderShippingNumberResponse{
 				Message: constants.ErrShippingNumberAlreadyExists,
+			}, nil
+		}
+
+		if strings.Contains(err.Error(), constants.ErrShippingNumberIsNotValid) {
+			return &order.UpdateOrderShippingNumberResponse{
+				Message: constants.ErrShippingNumberIsNotValid,
 			}, nil
 		}
 

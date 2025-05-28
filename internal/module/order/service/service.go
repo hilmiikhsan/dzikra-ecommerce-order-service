@@ -267,6 +267,7 @@ func (s *orderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 			Notes:               orderResult.Notes,
 		},
 		MidtransRedirectUrl: midtransResp.RedirectURL,
+		PaymentID:           paymentID.String(),
 	}, nil
 }
 
@@ -412,7 +413,16 @@ func (s *orderService) GetListOrder(ctx context.Context, page, limit int, search
 			log.Error().Err(err).Msg("service::GetListOrder - Failed to get latest order payment")
 			return nil, err
 		}
+
+		out[i].Payment.Status = ""
+
 		if pay != nil {
+			if time.Now().After(pay.ExpiredAt) {
+				out[i].Payment.Status = constants.OrderStatusExpired
+			} else {
+				out[i].Payment.Status = pay.PaymentStatus
+			}
+
 			var resp struct {
 				RedirectURL string `json:"redirect_url"`
 			}
@@ -615,7 +625,16 @@ func (s *orderService) GetListOrderTransaction(ctx context.Context, page, limit 
 			log.Error().Err(err).Msg("service::GetListOrderTransaction - Failed to get latest order payment")
 			return nil, err
 		}
+
+		out[i].Payment.Status = ""
+
 		if pay != nil {
+			if time.Now().After(pay.ExpiredAt) {
+				out[i].Payment.Status = constants.OrderStatusExpired
+			} else {
+				out[i].Payment.Status = pay.PaymentStatus
+			}
+
 			var resp struct {
 				RedirectURL string `json:"redirect_url"`
 			}
@@ -660,6 +679,11 @@ func (s *orderService) UpdateOrderShippingNumber(ctx context.Context, req *dto.U
 	if order.ShippingNumber == req.ShippingNumber {
 		log.Warn().Msg("service::UpdateOrderShippingNumber - Shipping number is the same")
 		return nil, err_msg.NewCustomErrors(fiber.StatusConflict, err_msg.WithMessage(constants.ErrShippingNumberAlreadyExists))
+	}
+
+	if _, err := s.rajaOngkirService.GetWaybill(ctx, req.ShippingNumber, strings.ToLower(order.ShippingType)); err != nil {
+		log.Warn().Err(err).Msg("service::UpdateOrderShippingNumber - Invalid waybill")
+		return nil, err_msg.NewCustomErrors(fiber.StatusUnprocessableEntity, err_msg.WithMessage(constants.ErrShippingNumberIsNotValid))
 	}
 
 	// Begin transaction

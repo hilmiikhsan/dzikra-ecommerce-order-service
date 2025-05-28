@@ -55,6 +55,7 @@ message CreateOrderResponse {
   OrderDetail order = 1;
   string midtrans_redirect_url = 2;
   string message = 3;
+  string payment_id = 4;
 }
 
 message CartItem {
@@ -168,6 +169,7 @@ message OrderItem {
 
 message Payment {
   string redirect_url = 1;
+  string status = 2;
 }
 
 message Address {

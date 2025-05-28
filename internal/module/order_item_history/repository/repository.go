@@ -31,3 +31,17 @@ func (r *orderItemHistoryRepository) SumProductCapital(ctx context.Context, star
 
 	return sum, nil
 }
+
+func (r *orderItemHistoryRepository) DuplicateOrderItemHistory(ctx context.Context, tx *sqlx.Tx, orderID string) error {
+	if _, err := tx.ExecContext(ctx, r.db.Rebind(queryDupOrderHistory), orderID); err != nil {
+		log.Error().Err(err).Msg("HistoryRepo.Duplicate - failed inserting order_history")
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx, r.db.Rebind(queryDupItemHistory), orderID); err != nil {
+		log.Error().Err(err).Msg("HistoryRepo.Duplicate - failed inserting order_item_history")
+		return err
+	}
+
+	return nil
+}

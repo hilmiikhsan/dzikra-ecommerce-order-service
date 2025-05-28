@@ -36,10 +36,14 @@ func (s *midtransService) CreateTransactionEcommerce(ctx context.Context, req *d
 			Email: req.Email,
 			Phone: req.ShippingPhone,
 			BillAddr: &midtrans.CustomerAddress{
+				FName:       req.ShippingName,
 				Address:     req.ShippingAddress,
+				Phone:       req.ShippingPhone,
 				CountryCode: "IDN",
 			},
 			ShipAddr: &midtrans.CustomerAddress{
+				FName:       req.ShippingName,
+				Phone:       req.ShippingPhone,
 				Address:     req.ShippingAddress,
 				CountryCode: "IDN",
 			},

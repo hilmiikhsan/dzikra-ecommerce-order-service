@@ -50,32 +50,9 @@ func (r *orderPaymentRepository) InsertNewOrderPayment(ctx context.Context, tx *
 }
 
 func (r *orderPaymentRepository) GetLatestByOrderID(ctx context.Context, orderID string) (*entity.OrderPayment, error) {
-	const query = `
-        SELECT
-            id,
-            order_id,
-            payment_method,
-            payment_status,
-            payment_type,
-            transaction_id,
-            gross_amount,
-            transaction_status,
-            payment_code,
-            signature_key,
-            midtrans_response,
-            callback_response,
-            transaction_request,
-            transaction_time,
-            expired_at,
-            application_id
-        FROM order_payments
-        WHERE order_id = $1
-        ORDER BY transaction_time DESC
-        LIMIT 1
-    `
-
 	var p entity.OrderPayment
-	err := r.db.GetContext(ctx, &p, query, orderID)
+
+	err := r.db.GetContext(ctx, &p, r.db.Rebind(queryGetLatestByOrderID), orderID)
 	if err == sql.ErrNoRows {
 		log.Error().Err(err).Msgf("repository::GetLatestByOrderID - no order payment found for order_id=%s", orderID)
 		return nil, nil
@@ -87,4 +64,36 @@ func (r *orderPaymentRepository) GetLatestByOrderID(ctx context.Context, orderID
 	}
 
 	return &p, nil
+}
+
+func (r *orderPaymentRepository) UpdateOrderPayment(ctx context.Context, tx *sqlx.Tx, data *entity.OrderPayment) error {
+	_, err := tx.ExecContext(ctx, r.db.Rebind(queryUpdateOrderPayment),
+		data.TransactionID,
+		data.TransactionStatus,
+		data.PaymentType,
+		data.SignatureKey,
+		data.TransactionTime,
+		data.PaymentStatus,
+		data.ID,
+	)
+	if err != nil {
+		log.Error().Err(err).Any("payload", data).Msg("repository::UpdateOrderPayment - Failed to update order payment")
+		return err
+	}
+
+	return nil
+}
+
+func (r *orderPaymentRepository) UpdateOrderPaymentStatus(ctx context.Context, tx *sqlx.Tx, data *entity.OrderPayment) error {
+	_, err := tx.ExecContext(ctx, r.db.Rebind(queryUpdateOrderPaymentStatus),
+		data.TransactionStatus,
+		data.PaymentStatus,
+		data.ID,
+	)
+	if err != nil {
+		log.Error().Err(err).Msgf("repository::UpdateOrderPaymentStatus - Failed to update order payment status for order_id=%s", data.OrderID)
+		return err
+	}
+
+	return nil
 }

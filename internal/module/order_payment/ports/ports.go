@@ -11,6 +11,8 @@ import (
 type OrderPaymentRepository interface {
 	InsertNewOrderPayment(ctx context.Context, tx *sqlx.Tx, data *entity.OrderPayment) error
 	GetLatestByOrderID(ctx context.Context, orderID string) (*entity.OrderPayment, error)
+	UpdateOrderPayment(ctx context.Context, tx *sqlx.Tx, data *entity.OrderPayment) error
+	UpdateOrderPaymentStatus(ctx context.Context, tx *sqlx.Tx, data *entity.OrderPayment) error
 }
 
 type OrderPaymentService interface {

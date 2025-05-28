@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -10,4 +12,5 @@ type OrderStatusHistory struct {
 	Status      string    `db:"status"`
 	Description string    `db:"description"`
 	ChangedBy   string    `db:"changed_by"`
+	ChangedAt   time.Time `db:"changed_at"`
 }

@@ -131,4 +131,12 @@ const (
 		FROM order_histories
 		WHERE order_date BETWEEN ? AND ?
 	`
+
+	queryUpdateOrderStatus = `
+		UPDATE orders
+		SET 
+			status = ?, 
+			updated_at = NOW()
+		WHERE id = ? AND deleted_at IS NULL
+	`
 )

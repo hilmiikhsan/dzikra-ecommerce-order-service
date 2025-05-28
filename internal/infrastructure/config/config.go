@@ -72,11 +72,17 @@ type Config struct {
 		ClientKey string `env:"MIDTRANS_CLIENT_KEY" env-default:""`
 		IsProd    bool   `env:"MIDTRANS_IS_PRODUCTION" env-default:"false"`
 	}
+	RabbitMQ struct {
+		URI string `env:"RABBITMQ_URI" env-default:""`
+	}
 	Auth struct {
 		AuthGrpcHost string `env:"AUTH_GRPC_HOST" env-default:"localhost:7000"`
 	}
 	Notification struct {
 		NotificationGrpcHost string `env:"NOTIFICATION_GRPC_HOST" env-default:"localhost:7001"`
+	}
+	POS struct {
+		PosGrpcHost string `env:"POS_GRPC_HOST" env-default:"localhost:7002"`
 	}
 }
 
@@ -155,8 +161,10 @@ func (c *Configure) Initialize() {
 		Envs.Midtrans.ServerKey = utils.GetEnv("MIDTRANS_SERVER_KEY", Envs.Midtrans.ServerKey)
 		Envs.Midtrans.ClientKey = utils.GetEnv("MIDTRANS_CLIENT_KEY", Envs.Midtrans.ClientKey)
 		Envs.Midtrans.IsProd = utils.GetBoolEnv("MIDTRANS_IS_PRODUCTION", Envs.Midtrans.IsProd)
+		Envs.RabbitMQ.URI = utils.GetEnv("RABBITMQ_URI", Envs.RabbitMQ.URI)
 		Envs.Auth.AuthGrpcHost = utils.GetEnv("AUTH_GRPC_HOST", Envs.Auth.AuthGrpcHost)
 		Envs.Notification.NotificationGrpcHost = utils.GetEnv("NOTIFICATION_GRPC_HOST", Envs.Notification.NotificationGrpcHost)
+		Envs.POS.PosGrpcHost = utils.GetEnv("POS_GRPC_HOST", Envs.POS.PosGrpcHost)
 	})
 }
 

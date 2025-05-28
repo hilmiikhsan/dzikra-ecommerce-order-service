@@ -52,4 +52,7 @@ var (
 	ErrShippingNumberAlreadyExists         = "Shipping number already exists"
 	ErrInvalidStartDate                    = "Invalid start date format"
 	ErrInvalidEndDate                      = "Invalid end date format"
+	ErrInvalidOrderIDFormat                = "Invalid order ID format, expected UUID format (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)"
+	ErrInvalidTransactionIDFormat          = "Invalid transaction ID format, expected UUID format (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)"
+	ErrShippingNumberIsNotValid            = "Shipping number is not valid"
 )

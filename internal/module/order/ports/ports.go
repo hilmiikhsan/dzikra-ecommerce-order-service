@@ -21,6 +21,7 @@ type OrderRepository interface {
 	UpdateShippingNumber(ctx context.Context, tx *sqlx.Tx, id uuid.UUID, shippingNumber string) (*entity.Order, error)
 	UpdateOrderTransactionStatus(ctx context.Context, tx *sqlx.Tx, id uuid.UUID, status string) error
 	CalculateTotalSummary(ctx context.Context, startDate, endDate time.Time) (*entity.OrderHistory, error)
+	UpdateStatus(ctx context.Context, tx *sqlx.Tx, data *entity.Order) error
 }
 
 type OrderService interface {

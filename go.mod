@@ -14,6 +14,7 @@ require (
 	github.com/midtrans/midtrans-go v1.3.8
 	github.com/rs/zerolog v1.34.0
 	github.com/sonitx/uuidv7 v1.0.2
+	github.com/streadway/amqp v1.1.0
 	google.golang.org/grpc v1.72.1
 	google.golang.org/protobuf v1.36.5
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
